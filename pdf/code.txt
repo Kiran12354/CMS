@@ -1,0 +1,241 @@
+<?php
+
+class Ptap_pdf extends CI_Controller {
+
+    function __construct() {
+        parent::__construct();
+        $this->load->library('pdf'); // Load library
+        $this->pdf->fontpath = 'pdf/font/'; // Specify font folder
+    
+    }
+    
+
+
+    public function year_report() {
+        $get_Invoice =$this->apmc_model->get_pdf_product($this->uri->segment(3));
+//        var_dump($get_Invoice);
+        
+        $get_extra_charges= $this->db->select('*')->from('extra_charges')->where('bidding_token',$this->uri->segment(3))->get();
+        
+        
+        
+        $this->pdf->AddPage();
+        $this->pdf->SetFont('Arial', 'B', 20);
+        $this->pdf->Rect(5, 5, 200, 287);
+        $this->pdf->Cell(5, 10, '', 0, 0);
+        $this->pdf->Cell(80, 10, 'TAX INVOICE', 0, 0);
+        
+        $this->pdf->SetFont('Arial', '', 10);
+        
+        $this->pdf->Cell(100, 10, ' Invoice No. ' . $get_Invoice->purchase_order, 0, 1, 'R');
+         $this->pdf->SetFont('Arial', 'B', 10);
+        $this->pdf->Cell(33, 10, ' Product Name. ', 0, 0, 'R');
+        $this->pdf->SetFont('Arial', '', 10);
+        $this->pdf->Cell(33, 10, get_type_name_by_id('products',$get_Invoice->product_id) , 0, 0, 'R');
+         
+         $this->pdf->Cell(120, 10, 'Date: ' ._d($get_Invoice->date) , 0, 1, 'R');
+          $this->pdf->Ln(10);
+        $this->pdf->SetFont('Arial', 'B', 12);
+        $this->pdf->Cell(130, 5, 'Billed From', 0, 0);
+        $this->pdf->Cell(80, 5, 'Billed To', 0, 1);
+        
+        $this->pdf->SetFont('Arial', '', 10);
+        $this->pdf->Cell(30, 5, 'APMC Name :', 0, 0);
+        $this->pdf->Cell(100, 5, get_type_name_by_id('apmc',$get_Invoice->apmc_id), 0, 0);
+        $this->pdf->Cell(25, 5, 'Farmer Name :', 0, 0);
+        $this->pdf->Cell(40, 5, get_type_name_by_token2('farmers',$get_Invoice->farmer_token ), 0, 1);
+      
+        
+        $this->pdf->Cell(30, 5, 'Mobile Number :', 0, 0);
+         $this->pdf->Cell(100, 5, get_type_name_by_id('apmc',$get_Invoice->apmc_id ,'mob1'), 0, 0);
+        $this->pdf->Cell(25, 5, 'Mobile Number :', 0, 0);
+        $this->pdf->Cell(40, 5, $get_Invoice->mob1 , 0, 1);
+        
+        
+        $this->pdf->Cell(18, 5, 'Email :', 0, 0);
+        $this->pdf->Cell(112, 5, get_type_name_by_token2('farmers',$get_Invoice->apmc_owner ,'email'), 0, 0);
+        $this->pdf->Cell(18, 5, 'Email :', 0, 0);
+        $this->pdf->Cell(40, 5, $get_Invoice->email , 0, 1);
+        
+        
+        
+         $this->pdf->Cell(18, 5, 'Address :', 0, 0);
+         $this->pdf->Cell(112, 5, get_type_name_by_id('apmc',$get_Invoice->apmc_id ,'address1'), 0, 0);
+         $this->pdf->Cell(18, 5, 'Address :', 0, 0);
+         $this->pdf->Cell(40, 5, $get_Invoice->address , 0, 1);
+         
+         
+         
+         $this->pdf->Cell(20, 5, 'Location :', 0, 0);
+         $this->pdf->Cell(110, 5, get_type_name_by_id('taluk',$get_Invoice->apmc_taluk).','. get_type_name_by_id('district',$get_Invoice->apmc_district).','.get_type_name_by_id('states',$get_Invoice->apmc_state), 0, 0);
+        $this->pdf->Cell(18, 5, 'Location :', 0, 0);
+         $this->pdf->Cell(40, 5, get_type_name_by_id('taluk',$get_Invoice->taluk_id).','. get_type_name_by_id('district',$get_Invoice->district_id).','.get_type_name_by_id('states',$get_Invoice->state_id), 0, 1);
+         
+        $this->pdf->Ln(5);
+        $this->pdf->SetFont('Arial', 'B', 8);
+        $this->pdf->cell(10, 8, 'SL', 1, 0, 'C');
+        $this->pdf->cell(28, 8, 'No. of Quintal', 1, 0, 'C');
+        $this->pdf->cell(28, 8, 'GST'.' in %', 1, 0, 'C');
+        $this->pdf->cell(30, 8, 'Total Tax in Rupee', 1, 0, 'C');
+        $this->pdf->cell(30, 8, 'Sub total in Rupee', 1, 0, 'C');
+        $this->pdf->cell(34, 8, 'Exta Charge Name', 1, 0, 'C');
+        $this->pdf->cell(32, 8, 'Exta Charge Amount ', 1, 0, 'C');
+        $this->pdf->cell(20, 8, '', 0, 1, 'C');
+        $this->pdf->cell(10, 8, '1', 1, 0, 'C');
+        $this->pdf->cell(28, 8, $get_Invoice->no_quintal, 1, 0, 'C');
+        $this->pdf->cell(28, 8, $get_Invoice->gst.' %', 1, 0, 'C');
+        $this->pdf->cell(30, 8, $get_Invoice->total_tax, 1, 0, 'C');
+        
+        $this->pdf->cell(30, 8, $get_Invoice->subtotal , 1, 0, 'C');
+        
+
+        
+        
+       
+//        if(!empty($get_extra_charge)){
+         $extacharge_total=0;
+            foreach ($get_extra_charges->result_array() as $row){
+                $extacharge_total+=$row['extraamount'];
+    
+                $this->pdf->cell(34, 8, $row['extraname'], 1, 0, 'C');
+                $this->pdf->cell(32, 8, $row['extraamount'], 1, 0, 'C');
+                $this->pdf->cell(20, 8, '', 0, 1, 'C');
+                $this->pdf->cell(10, 8, '', 0, 0, 'C');
+                $this->pdf->cell(25, 8, '', 0, 0, 'C');
+                $this->pdf->cell(22, 8, '', 0, 0, 'C');
+                $this->pdf->cell(35, 8, '', 0, 0, 'C');
+                $this->pdf->cell(34, 8, '', 0, 0, 'C');
+                
+                 
+            }
+        $this->pdf->cell(34, 8, '', 0, 0, 'C');
+        $this->pdf->cell(32, 8, 'Total  : '.number_format($extacharge_total, 2, '.', ''), 1, 0, 'C');
+            $this->pdf->cell(20, 8, '', 0, 1, 'C');
+                $this->pdf->cell(20, 8, '', 0, 1, 'C');
+                $this->pdf->cell(10, 8, '', 0, 0, 'C');
+                $this->pdf->cell(25, 8, '', 0, 0, 'C');
+                $this->pdf->cell(22, 8, '', 0, 0, 'C');
+                $this->pdf->cell(30, 8, '', 0, 0, 'C');
+                $this->pdf->cell(27, 8, '', 0, 0, 'C');
+                 $this->pdf->cell(27, 8, '', 0, 0, 'C');
+                  $this->pdf->cell(30, 8, 'Grand Total', 1, 0, 'C');
+                  $this->pdf->cell(20, 8, number_format($get_Invoice->total, 2, '.', '').'/-', 1, 1, 'C');
+//        }
+       $f = new NumberFormatter("en", NumberFormatter::SPELLOUT);           
+        $this->pdf->cell(120, 8, strtoupper('In Words :'.$f->format($get_Invoice->total).' only'), 0, 0);
+        $this->pdf->SetAlpha(0.2);
+        $this->pdf->Image('uploads/farmer2.png',40,0,130);
+        $this->pdf->SetAlpha(1);
+        
+           $this->pdf->Ln(22);
+        
+        
+    $this->pdf->SetFont('Arial', 'B', 20);
+        $this->pdf->Rect(5, 5, 200, 287);
+        $this->pdf->Cell(5, 10, '', 0, 0);
+        $this->pdf->Cell(80, 10, 'TAX INVOICE', 0, 0);
+     $this->pdf->SetFont('Arial', '', 10);
+        
+        $this->pdf->Cell(100, 10, ' Invoice No. ' . $get_Invoice->purchase_order, 0, 1, 'R');
+         $this->pdf->SetFont('Arial', 'B', 10);
+        $this->pdf->Cell(33, 10, ' Product Name. ', 0, 0, 'R');
+        $this->pdf->SetFont('Arial', '', 10);
+        $this->pdf->Cell(33, 10, get_type_name_by_id('products',$get_Invoice->product_id) , 0, 0, 'R');
+         
+         $this->pdf->Cell(120, 10, 'Date: ' ._d($get_Invoice->date) , 0, 1, 'R');
+         
+         
+          $this->pdf->Ln(10);
+        $this->pdf->SetFont('Arial', 'B', 12);
+        $this->pdf->Cell(130, 5, 'Billed From', 0, 0);
+        $this->pdf->Cell(80, 5, 'Billed To', 0, 1);
+        
+        $this->pdf->SetFont('Arial', '', 10);
+        $this->pdf->Cell(30, 5, 'APMC Name :', 0, 0);
+        $this->pdf->Cell(100, 5, get_type_name_by_id('apmc',$get_Invoice->apmc_id), 0, 0);
+        $this->pdf->Cell(25, 5, 'Farmer Name :', 0, 0);
+        $this->pdf->Cell(40, 5, get_type_name_by_token2('farmers',$get_Invoice->farmer_token ), 0, 1);
+      
+        
+        $this->pdf->Cell(30, 5, 'Mobile Number :', 0, 0);
+         $this->pdf->Cell(100, 5, get_type_name_by_id('apmc',$get_Invoice->apmc_id ,'mob1'), 0, 0);
+        $this->pdf->Cell(25, 5, 'Mobile Number :', 0, 0);
+        $this->pdf->Cell(40, 5, $get_Invoice->mob1 , 0, 1);
+        
+        
+        $this->pdf->Cell(18, 5, 'Email :', 0, 0);
+        $this->pdf->Cell(112, 5, get_type_name_by_token2('farmers',$get_Invoice->apmc_owner ,'email'), 0, 0);
+        $this->pdf->Cell(18, 5, 'Email :', 0, 0);
+        $this->pdf->Cell(40, 5, $get_Invoice->email , 0, 1);
+        
+        
+        
+         $this->pdf->Cell(18, 5, 'Address :', 0, 0);
+         $this->pdf->Cell(112, 5, get_type_name_by_id('apmc',$get_Invoice->apmc_id ,'address1'), 0, 0);
+         $this->pdf->Cell(18, 5, 'Address :', 0, 0);
+         $this->pdf->Cell(40, 5, $get_Invoice->address , 0, 1);
+         
+         
+         
+         $this->pdf->Cell(20, 5, 'Location :', 0, 0);
+         $this->pdf->Cell(110, 5, get_type_name_by_id('taluk',$get_Invoice->apmc_taluk).','. get_type_name_by_id('district',$get_Invoice->apmc_district).','.get_type_name_by_id('states',$get_Invoice->apmc_state), 0, 0);
+        $this->pdf->Cell(18, 5, 'Location :', 0, 0);
+         $this->pdf->Cell(40, 5, get_type_name_by_id('taluk',$get_Invoice->taluk_id).','. get_type_name_by_id('district',$get_Invoice->district_id).','.get_type_name_by_id('states',$get_Invoice->state_id), 0, 1);
+         $this->pdf->Ln(5);
+        $this->pdf->SetFont('Arial', 'B', 8);
+        $this->pdf->cell(10, 8, 'SL', 1, 0, 'C');
+        $this->pdf->cell(28, 8, 'No. of Quintal', 1, 0, 'C');
+        $this->pdf->cell(28, 8, 'GST'.' in %', 1, 0, 'C');
+        $this->pdf->cell(30, 8, 'Total Tax in Rupee', 1, 0, 'C');
+        $this->pdf->cell(30, 8, 'Sub total in Rupee', 1, 0, 'C');
+        $this->pdf->cell(34, 8, 'Exta Charge Name', 1, 0, 'C');
+        $this->pdf->cell(32, 8, 'Exta Charge Amount ', 1, 0, 'C');
+        $this->pdf->cell(20, 8, '', 0, 1, 'C');
+        $this->pdf->cell(10, 8, '1', 1, 0, 'C');
+        $this->pdf->cell(28, 8, $get_Invoice->no_quintal, 1, 0, 'C');
+        $this->pdf->cell(28, 8, $get_Invoice->gst.' %', 1, 0, 'C');
+        $this->pdf->cell(30, 8, $get_Invoice->total_tax, 1, 0, 'C');
+        
+        $this->pdf->cell(30, 8, $get_Invoice->subtotal , 1, 0, 'C');
+        
+
+        
+        
+       
+//        if(!empty($get_extra_charge)){
+         $extacharge_total=0;
+            foreach ($get_extra_charges->result_array() as $row){
+                $extacharge_total+=$row['extraamount'];
+    
+                $this->pdf->cell(34, 8, $row['extraname'], 1, 0, 'C');
+                $this->pdf->cell(32, 8, $row['extraamount'], 1, 0, 'C');
+                $this->pdf->cell(20, 8, '', 0, 1, 'C');
+                $this->pdf->cell(10, 8, '', 0, 0, 'C');
+                $this->pdf->cell(25, 8, '', 0, 0, 'C');
+                $this->pdf->cell(22, 8, '', 0, 0, 'C');
+                $this->pdf->cell(35, 8, '', 0, 0, 'C');
+                $this->pdf->cell(34, 8, '', 0, 0, 'C');
+                
+                 
+            }
+        $this->pdf->cell(34, 8, '', 0, 0, 'C');
+        $this->pdf->cell(32, 8, 'Total  : '.number_format($extacharge_total, 2, '.', ''), 1, 0, 'C');
+            $this->pdf->cell(20, 8, '', 0, 1, 'C');
+                $this->pdf->cell(20, 8, '', 0, 1, 'C');
+                $this->pdf->cell(10, 8, '', 0, 0, 'C');
+                $this->pdf->cell(25, 8, '', 0, 0, 'C');
+                $this->pdf->cell(22, 8, '', 0, 0, 'C');
+                $this->pdf->cell(30, 8, '', 0, 0, 'C');
+                $this->pdf->cell(27, 8, '', 0, 0, 'C');
+                 $this->pdf->cell(27, 8, '', 0, 0, 'C');
+                  $this->pdf->cell(30, 8, 'Grand Total', 1, 0, 'C');
+                  $this->pdf->cell(20, 8, number_format($get_Invoice->total, 2, '.', '').'/-', 1, 1, 'C');
+                  $f = new NumberFormatter("en", NumberFormatter::SPELLOUT);           
+        $this->pdf->cell(120, 0, strtoupper('In Words :'.$f->format($get_Invoice->total).' only'), 0, 0);
+   $this->pdf->SetAlpha(0.2);
+        $this->pdf->Image('uploads/farmer2.png',40,143,130);
+        $this->pdf->SetAlpha(1);
+        $this->pdf->Output();
+    }
+
+}
